@@ -1,0 +1,39 @@
+plugins {
+    id 'groovy'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+configurations {
+    targetDxpBom
+    targetDxpCompileBom
+}
+
+def targetVersion = "7.2.10.1";
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.3.11'
+
+    targetDxpBom "com.liferay.portal:release.dxp.bom:${targetVersion}@pom"
+    targetDxpCompileBom "com.liferay.portal:release.dxp.bom.compile.only:${targetVersion}@pom"
+
+    def addDep = { Map conf -> implementation group: "${conf.g}", name: "${conf.n}", version: "${conf.v}" }
+    def dxpBom = configurations.targetDxpBom.singleFile
+    def dxpCompileBom = configurations.targetDxpCompileBom.singleFile
+    parseDepManagement(dxpBom, addDep)
+    parseDepManagement(dxpCompileBom, addDep)
+}
+
+private void parseDepManagement(File bomFile, lambda) {
+    def xml = new XmlSlurper().parse(bomFile)
+
+    xml.dependencyManagement.dependencies.dependency.each {
+        if ((it.artifactId as String).contains("kernel") || (it.artifactId as String).contains("api"))
+            lambda g: it.groupId, n: it.artifactId, v: it.version
+    }
+}
