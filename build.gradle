@@ -10,14 +10,22 @@ configurations {
     targetDxpCompileBom
 }
 
-def targetVersion = "7.2.10.1";
+project.ext.onlyApis = false
+
+// From: https://repository.liferay.com/nexus/service/local/repositories/liferay-public-releases/content/com/liferay/portal/release.dxp.bom/maven-metadata.xml
+//def targetVersion = "7.2.10.8";
+//def targetVersion = "7.3.10.u17";
+//def targetVersion = "7.3.10.3";
+//def targetVersion = "7.3.10.u35";
+//def targetVersion = "7.4.13.u112";
+def targetVersion = "2024.q1.5";
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    compile 'org.codehaus.groovy:groovy-all:2.3.11'
+    implementation 'org.codehaus.groovy:groovy-all:2.3.11'
 
     targetDxpBom "com.liferay.portal:release.dxp.bom:${targetVersion}@pom"
     targetDxpCompileBom "com.liferay.portal:release.dxp.bom.compile.only:${targetVersion}@pom"
@@ -29,11 +37,11 @@ dependencies {
     parseDepManagement(dxpCompileBom, addDep)
 }
 
-private void parseDepManagement(File bomFile, lambda) {
+def parseDepManagement(File bomFile, lambda) {
     def xml = new XmlSlurper().parse(bomFile)
 
     xml.dependencyManagement.dependencies.dependency.each {
-        if ((it.artifactId as String).contains("kernel") || (it.artifactId as String).contains("api"))
+        if (!project.onlyApis || (it.artifactId as String).contains("kernel") || (it.artifactId as String).contains("api"))
             lambda g: it.groupId, n: it.artifactId, v: it.version
     }
 }
